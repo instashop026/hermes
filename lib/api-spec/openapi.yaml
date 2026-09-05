@@ -1,0 +1,665 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Telegram Mini App authentication
+  - name: mining
+    description: RM Coin mining operations
+  - name: ads
+    description: Monetag rewarded-ad operations
+  - name: activity
+    description: Recent account activity
+  - name: social
+    description: Social/gameplay state (reveals, tickets, wheel, follows)
+  - name: telegram
+    description: Telegram Bot API webhook operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /auth/telegram:
+    post:
+      operationId: authenticateTelegram
+      tags: [auth]
+      summary: Authenticate with Telegram Mini App initData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramAuthInput"
+      responses:
+        "200":
+          description: Authenticated user and miner state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppSession"
+        "401":
+          description: Invalid or expired Telegram initData
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/preview:
+    post:
+      operationId: authenticatePreview
+      tags: [auth]
+      summary: Authenticate a browser preview session
+      description: Creates a development-only preview account for direct browser access. Disabled in production.
+      responses:
+        "200":
+          description: Authenticated preview user and miner state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppSession"
+        "403":
+          description: Browser preview authentication is disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /telegram/webhook:
+    post:
+      operationId: receiveTelegramWebhook
+      tags: [telegram]
+      summary: Receive Telegram Bot API updates
+      description: Public webhook endpoint authenticated by Telegram's webhook secret header.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramWebhookUpdate"
+      responses:
+        "200":
+          description: Update acknowledged immediately
+        "401":
+          description: Invalid Telegram webhook secret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Telegram webhook is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get the authenticated RM Coin account
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Account details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /miner:
+    get:
+      operationId: getMiner
+      tags: [mining]
+      summary: Get server-calculated miner state
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Current miner state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MinerState"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /miner/claim:
+    post:
+      operationId: claimMining
+      tags: [mining]
+      summary: Atomically extract unclaimed RM Coin
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Updated balance and miner state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimResult"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /miner/upgrade:
+    post:
+      operationId: upgradeMiner
+      tags: [mining]
+      summary: Upgrade to the next miner level
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MinerUpgradeInput"
+      responses:
+        "200":
+          description: Updated miner state and balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpgradeResult"
+        "400":
+          description: Upgrade is not available or balance is insufficient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /ads/reward-intent:
+    post:
+      operationId: createAdRewardIntent
+      tags: [ads]
+      summary: Create a one-time Monetag reward intent
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Intent to be completed after a successful Monetag ad
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdRewardIntent"
+  /ads/reward:
+    post:
+      operationId: completeAdReward
+      tags: [ads]
+      summary: Complete a Monetag rewarded ad and grant energy
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdRewardInput"
+      responses:
+        "200":
+          description: Updated miner state after reward
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RewardResult"
+        "409":
+          description: Intent already used or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /activity:
+    get:
+      operationId: getActivity
+      tags: [activity]
+      summary: Get recent mining and reward activity
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+  /social:
+    get:
+      operationId: getSocial
+      tags: [social]
+      summary: Get the full social/gameplay aggregate for the authenticated user
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Social aggregate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: "#/components/schemas/SocialData" }
+    post:
+      operationId: postSocialFallback
+      deprecated: true
+      tags: [social]
+      summary: Deprecated no-op (state changes use /social/* action endpoints)
+      security:
+        - sessionCookie: []
+      responses:
+        "404":
+          description: Use the specific /social/{action} endpoints
+  /social/reveal/tap:
+    post:
+      operationId: revealTap
+      tags: [social]
+      summary: Curtain tap — server spends LP, advances reveal progress
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [modelId]
+              properties: { modelId: { type: string } }
+      responses:
+        "200":
+          description: Updated aggregate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { $ref: "#/components/schemas/SocialData" } }
+        "400":
+          description: Not enough LP / unknown model
+  /social/reveal/unlock:
+    post:
+      operationId: revealUnlock
+      tags: [social]
+      summary: Instant RM Coin unlock — server validates cost and balance
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [modelId]
+              properties: { modelId: { type: string } }
+      responses:
+        "200":
+          description: Updated aggregate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { $ref: "#/components/schemas/SocialData" } }
+        "400":
+          description: Not enough RM / already unlocked
+  /social/follow:
+    post:
+      operationId: followModel
+      tags: [social]
+      summary: Toggle a model follow
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [modelId]
+              properties: { modelId: { type: string } }
+      responses:
+        "200":
+          description: Updated aggregate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { $ref: "#/components/schemas/SocialData" } }
+  /social/post:
+    post:
+      operationId: postInteraction
+      tags: [social]
+      summary: Toggle like/save/hot on a post
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [postId, flag, value]
+              properties:
+                postId: { type: string }
+                flag: { type: string, enum: [liked, saved, hot] }
+                value: { type: boolean }
+      responses:
+        "200":
+          description: Updated aggregate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { $ref: "#/components/schemas/SocialData" } }
+  /social/view:
+    post:
+      operationId: recordView
+      tags: [social]
+      summary: Increment a post view count (atomic)
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [postId]
+              properties: { postId: { type: string } }
+      responses:
+        "200":
+          description: Updated aggregate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { data: { $ref: "#/components/schemas/SocialData" } }
+  /social/follow-style:
+    post:
+      operationId: followStyle
+      tags: [social]
+      summary: Toggle a style follow
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [styleId]
+              properties: { styleId: { type: string } }
+      responses:
+        "200":
+          description: Updated aggregate
+  /social/mute:
+    post:
+      operationId: setMute
+      tags: [social]
+      summary: Toggle global video mute (non-authoritative metadata)
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value]
+              properties: { value: { type: boolean } }
+      responses:
+        "200":
+          description: Updated aggregate
+  /social/wheel/spin:
+    post:
+      operationId: wheelSpin
+      tags: [social]
+      summary: Prize-wheel spin — SERVER picks the prize, validates spin availability
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Prize + updated aggregate
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  prize: { type: object }
+                  data: { $ref: "#/components/schemas/SocialData" }
+        "409":
+          description: No spins available
+  /social/ads/intent:
+    post:
+      operationId: adIntent
+      tags: [social]
+      summary: Register a watched ad -> advances the earned-spin counter
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Updated aggregate
+  /social/purchase:
+    post:
+      operationId: purchaseItem
+      tags: [social]
+      summary: Buy a miner/skin — server validates cost against catalogue
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [itemId]
+              properties: { itemId: { type: string } }
+      responses:
+        "200":
+          description: Updated aggregate
+        "400":
+          description: Not enough RM / already owned / unknown item
+  /social/equip:
+    post:
+      operationId: equipItem
+      tags: [social]
+      summary: Equip an owned miner/skin
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [itemId]
+              properties: { itemId: { type: string } }
+      responses:
+        "200":
+          description: Updated aggregate
+        "400":
+          description: Item not owned / unknown
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: rm_session
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    TelegramAuthInput:
+      type: object
+      properties:
+        initData:
+          type: string
+          minLength: 1
+      required: [initData]
+    TelegramWebhookUpdate:
+      type: object
+      additionalProperties: true
+    UserProfile:
+      type: object
+      properties:
+        id: { type: string }
+        telegramUserId: { type: string }
+        username: { type: ["string", "null"] }
+        firstName: { type: string }
+        lastName: { type: ["string", "null"] }
+        displayName: { type: ["string", "null"] }
+        photoUrl: { type: ["string", "null"] }
+        languageCode: { type: ["string", "null"] }
+        isPremium: { type: boolean }
+        balance: { type: number }
+        createdAt: { type: string, format: date-time }
+      required: [id, telegramUserId, username, firstName, balance, createdAt]
+    MinerConfig:
+      type: object
+      properties:
+        level: { type: number }
+        name: { type: string }
+        miningRate: { type: number }
+        maxEnergyMinutes: { type: number }
+        upgradeCost: { type: number }
+      required: [level, name, miningRate, maxEnergyMinutes, upgradeCost]
+    MinerState:
+      type: object
+      properties:
+        level: { type: number }
+        name: { type: string }
+        miningRate: { type: number }
+        maxEnergyMinutes: { type: number }
+        currentEnergyMinutes: { type: number }
+        minedAmount: { type: number }
+        balance: { type: number }
+        isMining: { type: boolean }
+        lastUpdatedAt: { type: string, format: date-time }
+        nextUpgrade:
+          anyOf:
+            - $ref: "#/components/schemas/MinerConfig"
+            - type: "null"
+      required: [level, name, miningRate, maxEnergyMinutes, currentEnergyMinutes, minedAmount, balance, isMining, lastUpdatedAt, nextUpgrade]
+    AppSession:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/UserProfile"
+        miner:
+          $ref: "#/components/schemas/MinerState"
+      required: [user, miner]
+    ClaimResult:
+      type: object
+      properties:
+        claimedAmount: { type: number }
+        balance: { type: number }
+        miner:
+          $ref: "#/components/schemas/MinerState"
+      required: [claimedAmount, balance, miner]
+    MinerUpgradeInput:
+      type: object
+      properties:
+        targetLevel: { type: number, minimum: 2, maximum: 3 }
+      required: [targetLevel]
+    UpgradeResult:
+      type: object
+      properties:
+        balance: { type: number }
+        miner:
+          $ref: "#/components/schemas/MinerState"
+      required: [balance, miner]
+    AdRewardIntent:
+      type: object
+      properties:
+        intentId: { type: string }
+        rewardMinutes: { type: number }
+        provider: { type: string, enum: [monetag] }
+        expiresAt: { type: string, format: date-time }
+      required: [intentId, rewardMinutes, provider, expiresAt]
+    AdRewardInput:
+      type: object
+      properties:
+        intentId: { type: string, minLength: 1 }
+      required: [intentId]
+    RewardResult:
+      type: object
+      properties:
+        rewardMinutes: { type: number }
+        miner:
+          $ref: "#/components/schemas/MinerState"
+      required: [rewardMinutes, miner]
+    ActivityItem:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [MINING_CLAIM, AD_REWARD, AD_REWARD_LP, MINER_UPGRADE, PURCHASE, REVEAL_UNLOCK] }
+        amount: { type: number }
+        label: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, type, amount, label, createdAt]
+    SocialData:
+      type: object
+      description: Canonical social/gameplay aggregate owned by the backend.
+      properties:
+        starterIds: { type: array, items: { type: string } }
+        unlockedIds: { type: array, items: { type: string } }
+        revealProgress: { type: object, additionalProperties: { type: number } }
+        lpBalance: { type: number }
+        followingIds: { type: array, items: { type: string } }
+        likedPostIds: { type: array, items: { type: string } }
+        hotPostIds: { type: array, items: { type: string } }
+        savedPostIds: { type: array, items: { type: string } }
+        followedStyles: { type: array, items: { type: string } }
+        muted: { type: boolean }
+        viewCounts: { type: object, additionalProperties: { type: number } }
+        ownedMiners: { type: array, items: { type: string } }
+        ownedSkins: { type: array, items: { type: string } }
+        equippedMiner: { type: string, nullable: true }
+        equippedSkin: { type: string, nullable: true }
+        modelTickets: { type: integer }
+        shotTickets: { type: integer }
+        bonusMineMinutes: { type: integer }
+        lastWheelSpin: { type: string, format: date-time, nullable: true }
+        earnedSpins: { type: integer }
+        adsWatchedForSpin: { type: integer }
+    WheelPrize:
+      type: object
+      properties:
+        key: { type: string }
+        label: { type: string }
+        kind: { type: string, enum: [rm, lp, modelTicket, shotTicket, mineMinutes] }
+        value: { type: number }
+      required: [key, label, kind, value]
+

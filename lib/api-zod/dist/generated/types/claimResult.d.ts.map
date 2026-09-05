@@ -1,0 +1,1 @@
+{"version":3,"file":"claimResult.d.ts","sourceRoot":"","sources":["../../../src/generated/types/claimResult.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,UAAU,EAAE,MAAM,cAAc,CAAC;AAE/C,MAAM,WAAW,WAAW;IAC1B,aAAa,EAAE,MAAM,CAAC;IACtB,OAAO,EAAE,MAAM,CAAC;IAChB,KAAK,EAAE,UAAU,CAAC;CACnB"}

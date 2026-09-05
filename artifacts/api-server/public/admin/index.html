@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RM Coin — Admin</title>
+  <style>
+    :root { --bg:#0c171b; --card:#152328; --line:#22323a; --primary:#19f5bb; --accent:#fba637; --muted:#8aa0a8; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Manrope,system-ui,sans-serif; background:var(--bg); color:#e8f0f2; min-height:100vh; }
+    .wrap { max-width:720px; margin:0 auto; padding:24px 16px 80px; }
+    h1 { font-family:"Space Grotesk",sans-serif; font-size:26px; margin:0 0 4px; }
+    .sub { color:var(--muted); font-size:13px; margin-bottom:20px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; margin-bottom:16px; }
+    label { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:12px 0 6px; }
+    input,textarea,select { width:100%; background:#0e1a1f; border:1px solid var(--line); color:#e8f0f2; border-radius:10px; padding:11px 12px; font-size:14px; font-family:inherit; }
+    textarea { min-height:70px; resize:vertical; }
+    .row { display:flex; gap:12px; }
+    .row > div { flex:1; }
+    button { cursor:pointer; border:none; border-radius:10px; padding:12px 16px; font-weight:700; font-size:14px; font-family:inherit; }
+    .btn-primary { background:var(--primary); color:#04130f; }
+    .btn-accent { background:linear-gradient(120deg,#fba637,#f76f45); color:#1a0f06; }
+    .btn-ghost { background:transparent; border:1px solid var(--line); color:#e8f0f2; }
+    .tabs { display:flex; gap:8px; margin-bottom:18px; }
+    .tab { flex:1; text-align:center; padding:12px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--muted); font-weight:700; }
+    .tab.active { color:var(--primary); border-color:var(--primary); }
+    .pill { display:inline-block; background:#0e1a1f; border:1px solid var(--line); border-radius:999px; padding:4px 10px; margin:3px 4px 0 0; font-size:12px; }
+    .pill button { background:none; border:none; color:var(--accent); padding:0 0 0 6px; font-size:13px; }
+    .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+    .thumb { position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; border:2px solid var(--line); cursor:pointer; }
+    .thumb.sel { border-color:var(--primary); box-shadow:0 0 0 2px var(--primary); }
+    .thumb img { width:100%; height:100%; object-fit:cover; }
+    .msg { font-size:13px; margin-top:10px; }
+    .ok { color:var(--primary); } .err { color:#ff7a7a; }
+    .folder { padding:10px 12px; border:1px solid var(--line); border-radius:10px; margin-top:6px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+    .folder:hover { border-color:var(--primary); }
+    .hidden { display:none; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; }
+    .logout { background:transparent; border:1px solid var(--line); color:var(--muted); font-size:12px; padding:7px 12px; }
+    .zs-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:40; }
+    .zs-modal { position:fixed; z-index:50; top:50%; left:50%; transform:translate(-50%,-50%); width:min(640px,94vw); max-height:86vh; overflow:auto; }
+    .thumb.pick { border-color:var(--accent); }
+    .thumb.pick::after { content:"Use"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(251,166,55,.32); color:#1a0f06; font-weight:800; font-size:13px; text-shadow:0 1px 2px rgba(0,0,0,.35); }
+    .sel-remove { position:absolute; top:2px; right:2px; width:20px; height:20px; border:none; border-radius:50%; background:rgba(7,17,19,.8); color:#fff; font-size:14px; line-height:1; display:flex; align-items:center; justify-content:center; }
+    .sel-cap { position:absolute; left:0; right:0; bottom:0; width:100%; border:none; border-top:1px solid var(--line); background:rgba(7,17,19,.82); color:#e8f0f2; font-size:10px; padding:3px 4px; }
+    #p_selected .thumb { border-color:var(--primary); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <!-- LOGIN -->
+  <div id="login" class="card">
+    <h1>RM Coin Admin</h1>
+    <p class="sub">Sign in to manage models &amp; posts.</p>
+    <label>Username</label>
+    <input id="user" autocomplete="username" />
+    <label>Password</label>
+    <input id="pass" type="password" autocomplete="current-password" />
+    <div style="margin-top:14px"><button class="btn-primary" id="loginBtn" style="width:100%">Enter</button></div>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="hidden">
+    <div class="topbar">
+      <h1>RM Coin Admin</h1>
+      <button class="logout" id="logoutBtn">Log out</button>
+    </div>
+    <p class="sub">Feeds content into the RM Coin Mini App via ZeroStorage.</p>
+    <div class="tabs">
+      <div class="tab active" data-tab="model">Add model</div>
+      <div class="tab" data-tab="edit">Edit model</div>
+      <div class="tab" data-tab="post">Add post</div>
+    </div>
+
+    <!-- ADD MODEL -->
+    <section id="panel-model">
+      <div class="card">
+        <label>Model name</label>
+        <input id="m_name" placeholder="Mara Vale" />
+        <div class="row">
+          <div><label>Slug (a-z0-9-)</label><input id="m_slug" placeholder="mara-vale" /></div>
+          <div><label>Username / handle</label><input id="m_username" placeholder="@maravale" /></div>
+        </div>
+        <label>Bio / description</label>
+        <textarea id="m_bio" placeholder="Soft focus, hard edges."></textarea>
+        <div class="row">
+          <div><label>Location</label><input id="m_location" placeholder="Lisbon / remote" /></div>
+          <div><label>Accent color</label><input id="m_accent" value="#ffbd7d" /></div>
+        </div>
+        <label>Tags (1–10, press Enter or comma)</label>
+        <input id="m_tagInput" placeholder="editorial, slow travel" />
+        <div id="m_tags"></div>
+        <div class="row">
+          <div><label>Reveal cost (LP)</label><input id="m_lp" type="number" value="30" /></div>
+          <div><label>RM cost</label><input id="m_rm" type="number" step="0.1" value="2.5" /></div>
+        </div>
+        <div className="row">
+          <div>
+            <label>Profile pic (upload)</label>
+            <input id="m_avatarFile" type="file" accept="image/*" />
+            <div class="msg" id="m_avatarMsg"></div>
+          </div>
+          <div>
+            <label>Cover (upload)</label>
+            <input id="m_coverFile" type="file" accept="image/*" />
+            <div class="msg" id="m_coverMsg"></div>
+          </div>
+        </div>
+        <label>…or pick from 0RMCOIN (ZeroStorage)</label>
+        <div class="row">
+          <div><button type="button" class="btn-ghost" id="m_browseAvatar" style="width:100%">Browse 0RMCOIN → avatar</button></div>
+          <div><button type="button" class="btn-ghost" id="m_browseCover" style="width:100%">Browse 0RMCOIN → cover</button></div>
+        </div>
+        <label>…or paste image URL (avatar / cover)</label>
+        <div className="row">
+          <div><input id="m_avatarUrl" placeholder="https://…/avatar.jpg" /></div>
+          <div><input id="m_coverUrl" placeholder="https://…/cover.jpg" /></div>
+        </div>
+        <div style="margin-top:16px"><button class="btn-accent" id="addModelBtn" style="width:100%">Create model</button></div>
+        <div class="msg" id="modelMsg"></div>
+      </div>
+    </section>
+
+    <!-- EDIT MODEL -->
+    <section id="panel-edit" class="hidden">
+      <div class="card">
+        <label>Select model to edit</label>
+        <input id="e_search" placeholder="Search models…" />
+        <select id="e_model" size="5" style="margin-top:6px"></select>
+        <div class="msg" id="e_modelMsg"></div>
+      </div>
+      <div class="card" id="e_formCard" style="display:none">
+        <input type="hidden" id="e_slug" />
+        <label>Model name</label>
+        <input id="e_name" placeholder="Mara Vale" />
+        <div class="row">
+          <div><label>Slug (locked)</label><input id="e_slugView" disabled /></div>
+          <div><label>Username / handle</label><input id="e_username" placeholder="@maravale" /></div>
+        </div>
+        <label>Bio / description</label>
+        <textarea id="e_bio" placeholder="Soft focus, hard edges."></textarea>
+        <div class="row">
+          <div><label>Location</label><input id="e_location" placeholder="Lisbon / remote" /></div>
+          <div><label>Accent color</label><input id="e_accent" value="#ffbd7d" /></div>
+        </div>
+        <label>Tags (1–10, press Enter or comma)</label>
+        <input id="e_tagInput" placeholder="editorial, slow travel" />
+        <div id="e_tags"></div>
+        <div class="row">
+          <div><label>Reveal cost (LP)</label><input id="e_lp" type="number" value="30" /></div>
+          <div><label>RM cost</label><input id="e_rm" type="number" step="0.1" value="2.5" /></div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Profile pic (upload)</label>
+            <input id="e_avatarFile" type="file" accept="image/*" />
+            <div class="msg" id="e_avatarMsg"></div>
+          </div>
+          <div>
+            <label>Cover (upload)</label>
+            <input id="e_coverFile" type="file" accept="image/*" />
+            <div class="msg" id="e_coverMsg"></div>
+          </div>
+        </div>
+        <label>…or pick from 0RMCOIN (ZeroStorage)</label>
+        <div class="row">
+          <div><button type="button" class="btn-ghost" id="e_browseAvatar" style="width:100%">Browse 0RMCOIN → avatar</button></div>
+          <div><button type="button" class="btn-ghost" id="e_browseCover" style="width:100%">Browse 0RMCOIN → cover</button></div>
+        </div>
+        <label>…or paste image URL (avatar / cover)</label>
+        <div class="row">
+          <div><input id="e_avatarUrl" placeholder="https://…/avatar.jpg" /></div>
+          <div><input id="e_coverUrl" placeholder="https://…/cover.jpg" /></div>
+        </div>
+        <div style="margin-top:16px"><button class="btn-accent" id="editModelBtn" style="width:100%">Save changes</button></div>
+        <div class="msg" id="editModelMsg"></div>
+      </div>
+    </section>
+
+    <!-- ADD POST -->
+    <section id="panel-post" class="hidden">
+      <div class="card">
+        <label>Select model</label>
+        <input id="p_search" placeholder="Search models…" />
+        <select id="p_model" size="4" style="margin-top:6px"></select>
+        <div class="msg" id="p_modelMsg"></div>
+      </div>
+      <div class="card" id="p_browser" style="display:none">
+        <label>ZeroStorage folder</label>
+        <div id="p_folderPath" class="msg"></div>
+        <div id="p_folders"></div>
+        <div class="row" style="align-items:center;margin-top:8px">
+          <button type="button" class="btn-ghost" id="p_selectAll" style="flex:1">Select all in folder</button>
+          <span id="p_selCount" class="msg" style="margin:0">0 selected</span>
+        </div>
+        <div id="p_files" class="grid"></div>
+        <div style="margin-top:14px"><button class="btn-primary" id="addPostBtn" style="width:100%">Attach selected to model</button></div>
+        <div class="msg" id="postMsg"></div>
+      </div>
+      <div class="card" id="p_selectedCard" style="display:none">
+        <label>Selected (<span id="p_selectedCount">0</span>) — preview &amp; captions</label>
+        <div class="row" style="align-items:flex-end">
+          <label style="flex:1">Caption for all <span class="msg" style="margin:0;font-transform:none;letter-spacing:0">(applies to every selected image)</span></label>
+          <label style="flex:1"><input type="checkbox" id="p_useFolderName" style="width:auto;display:inline;margin-right:6px" />Use folder name</label>
+        </div>
+        <input id="p_captionAll" placeholder="e.g. New drop · behind the scenes" style="margin-top:6px" />
+        <div id="p_selected" class="grid" style="grid-template-columns:repeat(4,1fr);margin-top:10px"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ZEROSTORAGE PICKER MODAL (single-select image) -->
+<div id="zsPicker" class="hidden">
+  <div class="zs-backdrop"></div>
+  <div class="zs-modal card">
+    <div class="topbar">
+      <h1 style="font-size:18px">Pick an image</h1>
+      <button class="logout" id="zsClose">Close</button>
+    </div>
+    <label>ZeroStorage folder</label>
+    <div id="zs_folderPath" class="msg"></div>
+    <div id="zs_folders"></div>
+    <div id="zs_files" class="grid"></div>
+  </div>
+</div>
+
+<script src="/admin/admin.js"></script>
+</body>
+</html>

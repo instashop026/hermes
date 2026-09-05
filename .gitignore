@@ -1,0 +1,30 @@
+# Dependencies — install on the server via npm install
+node_modules/
+artifacts/api-server/node_modules/
+artifacts/rm-coin/node_modules/
+.pnpm-store/
+
+# Environment / secrets — set on the server, never commit
+.env
+.env.local
+*.env
+
+# Build artifacts we do NOT ship (regenerate locally when needed)
+artifacts/api-server/dist/*.map
+artifacts/api-server/dist/pino-*.mjs
+artifacts/api-server/dist/thread-stream-*.mjs
+artifacts/rm-coin/node_modules
+artifacts/rm-coin/dist
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.log
+.cache/
+.hermes/
+.attached_assets/
+
+# Keep this file itself, and the pre-built dist/spa we deploy
+! artifacts/api-server/dist/index.mjs
+! artifacts/api-server/dist/index.mjs.map
+! artifacts/rm-coin/dist/public/
