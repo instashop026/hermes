@@ -19,8 +19,8 @@ ENV DIRECT_URL=postgresql://postgres.isnjwbqknwcxujmruqel:info52305344@aws-0-eu-
 ENV DATABASE_URL=postgresql://postgres.isnjwbqknwcxujmruqel:info52305344@aws-0-eu-north-1.pooler.supabase.com:6543/postgres?pgbouncer=true
 ENV SESSION_SECRET=rm-coin-local-dev-secret-7f3a9c21e8b40d6a
 ENV TELEGRAM_BOT_TOKEN=8720448254:AAHAKDwkiywKUtfC6UbpbMWDINSMmiUKyqo
-ENV TELEGRAM_WEBAPP_URL=https://r-o5l3s-23178.justrunmy.app
-ENV TELEGRAM_WEBHOOK_URL=https://r-o5l3s-23178.justrunmy.app/api/telegram/webhook
+ENV TELEGRAM_WEBAPP_URL=https://gitr_o5l3s-23e.b.onjrnm.vip
+ENV TELEGRAM_WEBHOOK_URL=https://gitr_o5l3s-23e.b.onjrnm.vip/api/telegram/webhook
 ENV SUPABASE_URL=https://isnjwbqknwcxujmruqel.supabase.co
 ENV SUPABASE_PUBLISHABLE_KEY=sb_publishable_fMROtm_ERHaz0ghO5sPVBg_gZtCq7W3
 ENV SUPABASE_SECRET_KEY=sb_secret_ARHWZYtid-vX_GtiqswMLw_OxIsjiRS
