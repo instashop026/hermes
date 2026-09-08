@@ -2,9 +2,16 @@ FROM node:20-alpine
 WORKDIR /home/container
 COPY . .
 RUN npm install express cookie-parser cors pino pino-http drizzle-orm zod pg
-RUN cp artifacts/api-server/dist/index.mjs index.js
+
+# The app resolves static paths relative to __dirname (where the running module lives).
+# app.ts expects index.js to be inside dist/ so that:
+#   publicDir = __dirname/../public         → artifacts/api-server/public/admin
+#   spaDir    = __dirname/../../rm-coin/dist/public → artifacts/rm-coin/dist/public
+# Copy the esbuild bundle into dist/ and run from there.
+RUN cp artifacts/api-server/dist/index.mjs artifacts/api-server/dist/index.js
+
 EXPOSE 8080
-CMD ["node", "index.js"]
+CMD ["node", "artifacts/api-server/dist/index.js"]
 
 ENV NODE_ENV=production
 ENV PORT=8080
