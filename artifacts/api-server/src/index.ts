@@ -239,6 +239,8 @@ async function migrate() {
 
 await migrate();
 
+// DEPLOY_REFRESH_20260908_Timestamp invalidates Docker build cache
+
 app.listen(port, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
