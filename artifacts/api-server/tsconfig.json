@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": false,
+    "noResolve": false,
+    "module": "esnext",
+    "target": "es2022",
+    "allowJs": true,
+    "checkJs": false,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../../lib/db" },
+    { "path": "../../lib/api-zod" }
+  ]
+}
